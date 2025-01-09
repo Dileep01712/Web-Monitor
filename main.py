@@ -6,6 +6,7 @@ import smtplib
 import requests
 import threading
 from flask import Flask
+from waitress import serve
 from datetime import datetime
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -126,9 +127,6 @@ if __name__ == "__main__":
     # Start the background monitoring thread
     monitoring_thread = threading.Thread(target=background_monitoring, daemon=True)
     monitoring_thread.start()
-
-    # Start the Waitress server
-    from waitress import serve
 
     print("Starting server with Waitress...")
     serve(app, host="0.0.0.0", port=8000)
