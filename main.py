@@ -2,6 +2,7 @@
 import os
 import pytz
 import time
+import logging
 import smtplib
 import requests
 import threading
@@ -28,6 +29,14 @@ if not all([USER_EMAIL, PASSWORD, EMAIL, CODE, URL]):
     raise ValueError(
         "Missing required environment variables. Please check your .env file."
     )
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],
+)
+
+logger = logging.getLogger(__name__)
 
 
 # Function to monitor the website
@@ -110,11 +119,15 @@ def get_sleep_time():
 # Background task for monitoring
 def background_monitoring():
     while True:
-        print("Monitoring started...")
-        print(monitor_website(URL, CODE, EMAIL))
-        sleep_time = get_sleep_time()
-        print(f"Sleeping for {sleep_time // 60} minutes...")
-        time.sleep(sleep_time)
+        try:
+            logger.info("Monitoring started...")
+            result = monitor_website(URL, CODE, EMAIL)
+            logger.info(result)
+            sleep_time = get_sleep_time()
+            logger.info(f"Sleeping for {sleep_time // 60} minutes...")
+            time.sleep(sleep_time)
+        except Exception as e:
+            logger.exception(f"Error in background monitoring: {e}")
 
 
 # Flask endpoint
@@ -128,5 +141,5 @@ if __name__ == "__main__":
     monitoring_thread = threading.Thread(target=background_monitoring, daemon=True)
     monitoring_thread.start()
 
-    print("Starting server with Waitress...")
+    logger.info("Starting server with Waitress...")
     serve(app, host="0.0.0.0", port=8000)
