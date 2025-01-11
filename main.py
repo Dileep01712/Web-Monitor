@@ -11,6 +11,7 @@ from waitress import serve
 from datetime import datetime
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from datetime import timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -113,7 +114,12 @@ def get_sleep_time():
     if 7 <= india_time.hour < 19:  # Between 7 AM and 7 PM
         return 600  # 10 minutes
     else:
-        return 39600  # 30 minutes
+        # Calculate seconds until the next 7 AM
+        next_7am = india_time.replace(hour=7, minute=0, second=0, microsecond=0)
+        if india_time.hour >= 7:  # If already past 7 AM, calculate for the next day
+            next_7am += timedelta(days=1)
+        sleep_seconds = (next_7am - india_time).total_seconds()
+        return min(sleep_seconds, 600)  # Sleep for at most 10 minutes
 
 
 # Background task for monitoring
@@ -123,11 +129,12 @@ def background_monitoring():
             logger.info("Monitoring started...")
             result = monitor_website(URL, CODE, EMAIL)
             logger.info(result)
+        except Exception as e:
+            logger.exception(f"Error in background monitoring: {e}")
+        finally:
             sleep_time = get_sleep_time()
             logger.info(f"Sleeping for {sleep_time // 60} minutes...")
             time.sleep(sleep_time)
-        except Exception as e:
-            logger.exception(f"Error in background monitoring: {e}")
 
 
 # Flask endpoint
